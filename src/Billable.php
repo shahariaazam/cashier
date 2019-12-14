@@ -817,11 +817,11 @@ trait Billable
     }
 
     /**
-     * Determine if the customer receives a reverse charge.
+     * Determine if reverse charge applies to the customer.
      *
      * @return bool
      */
-    public function receivesReverseCharge()
+    public function reverseChargeApplies()
     {
         return $this->asStripeCustomer()->tax_exempt === StripeCustomer::TAX_EXEMPT_REVERSE;
     }

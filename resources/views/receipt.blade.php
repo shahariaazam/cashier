@@ -170,15 +170,11 @@
                             <td colspan="2" style="text-align: right;">Tax</td>
                             <td>{{ $invoice->tax() }}</td>
                         </tr>
-                    @elseif ($invoice->receivesReverseCharge() || $invoice->isTaxExempt())
+                    @elseif ($invoice->reverseChargeApplies())
                         <tr>
                             <td colspan="2" style="text-align: right;"></td>
                             <td>
-                                @if ($invoice->receivesReverseCharge())
-                                    Tax to be paid on reverse charge basis.
-                                @elseif ($invoice->isTaxExempt())
-                                    Customer is exempt from taxes.
-                                @endif
+                                Tax to be paid on reverse charge basis.
                             </td>
                         </tr>
                     @endif

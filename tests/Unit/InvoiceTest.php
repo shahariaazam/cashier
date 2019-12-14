@@ -257,6 +257,6 @@ class InvoiceTest extends TestCase
 
         $invoice = new Invoice($user, $stripeInvoice);
 
-        $this->assertTrue($invoice->receivesReverseCharge());
+        $this->assertTrue($invoice->reverseChargeApplies());
     }
 }
