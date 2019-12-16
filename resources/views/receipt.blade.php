@@ -164,15 +164,20 @@
                         </tr>
                     @endif
 
-                    <!-- Display The Tax Amount -->
+                    <!-- Display The Taxes -->
                     @if ($invoice->hasTax())
-                        <tr>
-                            <td colspan="2" style="text-align: right;">Tax</td>
-                            <td>{{ $invoice->tax() }}</td>
-                        </tr>
+                        @foreach ($invoice->taxes() as $tax)
+                            <tr>
+                                <td colspan="2" style="text-align: right;">
+                                    {{ $tax->display_name }} {{ $tax->jurisdiction ? ' - '.$tax->jurisdiction : '' }}
+                                    ({{ $tax->percentage }}%{{ $tax->isInclusive() ? ' incl.' : '' }})
+                                </td>
+                                <td>{{ $tax->amount() }}</td>
+                            </tr>
+                        @endforeach
                     @elseif ($invoice->reverseChargeApplies())
                         <tr>
-                            <td colspan="2" style="text-align: right;"></td>
+                            <td colspan="2"></td>
                             <td>
                                 Tax to be paid on reverse charge basis.
                             </td>

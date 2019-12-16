@@ -36,6 +36,13 @@ class Invoice
     protected $items;
 
     /**
+     * The taxes applied to the invoice.
+     *
+     * @var \Laravel\Cashier\Tax[]
+     */
+    protected $taxes;
+
+    /**
      * Create a new invoice instance.
      *
      * @param  \Illuminate\Database\Eloquent\Model  $owner
@@ -215,6 +222,27 @@ class Invoice
     public function hasTax()
     {
         return $this->invoice->tax > 0;
+    }
+
+    /**
+     * Get the taxes applied to the invoice.
+     *
+     * @return \Laravel\Cashier\Tax[]
+     */
+    public function taxes()
+    {
+        if (! is_null($this->taxes)) {
+            return $this->taxes;
+        }
+
+        $totalTaxAmounts = StripeInvoice::retrieve(
+            $this->id,
+            $this->owner->stripeOptions(['expand' => 'total_tax_amounts.tax_rate'])
+        )->total_tax_amounts;
+
+        return $this->taxes = collect($totalTaxAmounts)->map(function (array $taxAmount) {
+            return new Tax($taxAmount['amount'], $this->invoice->currency, $taxAmount['tax_rate']);
+        })->all();
     }
 
     /**
