@@ -236,8 +236,8 @@ class Invoice
         }
 
         $totalTaxAmounts = StripeInvoice::retrieve(
-            $this->id,
-            $this->owner->stripeOptions(['expand' => 'total_tax_amounts.tax_rate'])
+            ['id' => $this->id, 'expand' => 'total_tax_amounts.tax_rate'],
+            $this->owner->stripeOptions()
         )->total_tax_amounts;
 
         return $this->taxes = collect($totalTaxAmounts)->map(function (array $taxAmount) {
@@ -299,7 +299,7 @@ class Invoice
             $invoice = StripeInvoice::retrieve([
                 'id' => $this->invoice->id,
                 'expand' => ['lines.data.tax_amounts.tax_rate'],
-            ]);
+            ], $this->owner->stripeOptions());
 
             $this->items = new Collection($invoice->lines->autoPagingIterator());
         }
