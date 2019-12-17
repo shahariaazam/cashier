@@ -29,7 +29,7 @@ class Invoice
     protected $invoice;
 
     /**
-     * The Stripe invoice items.
+     * The Stripe invoice line items.
      *
      * @var \Stripe\Collection|\Stripe\InvoiceLineItem[]
      */
@@ -272,7 +272,7 @@ class Invoice
      */
     public function invoiceItems()
     {
-        return $this->invoiceItemsByType('invoiceitem');
+        return $this->invoiceLineItemsByType('invoiceitem');
     }
 
     /**
@@ -282,7 +282,7 @@ class Invoice
      */
     public function subscriptions()
     {
-        return $this->invoiceItemsByType('subscription');
+        return $this->invoiceLineItemsByType('subscription');
     }
 
     /**
@@ -291,16 +291,23 @@ class Invoice
      * @param  string  $type
      * @return array
      */
-    public function invoiceItemsByType($type)
+    public function invoiceLineItemsByType($type)
     {
         if (is_null($this->items)) {
-            $this->items = new Collection($this->lines->autoPagingIterator());
+            // In order to make use of the tax rates on the different line items,
+            // we'll need to re-retrieve the invoice with the expanded tax rates.
+            $invoice = StripeInvoice::retrieve([
+                'id' => $this->invoice->id,
+                'expand' => ['lines.data.tax_amounts.tax_rate'],
+            ]);
+
+            $this->items = new Collection($invoice->lines->autoPagingIterator());
         }
 
         return $this->items->filter(function (StripeInvoiceLineItem $item) use ($type) {
             return $item->type === $type;
         })->map(function (StripeInvoiceLineItem $item) {
-            return new InvoiceItem($this->owner, $item);
+            return new InvoiceLineItem($this->owner, $item);
         })->all();
     }
 
