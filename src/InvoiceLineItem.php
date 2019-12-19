@@ -77,11 +77,11 @@ class InvoiceLineItem
     protected function calculateTaxPercentage($inclusive)
     {
         return (int) collect($this->item->tax_amounts)
-            ->filter(function (array $taxAmount) use ($inclusive) {
-                return $taxAmount['inclusive'] === (bool) $inclusive;
+            ->filter(function (object $taxAmount) use ($inclusive) {
+                return $taxAmount->inclusive === (bool) $inclusive;
             })
-            ->sum(function (array $taxAmount) {
-                return $taxAmount['tax_rate']->percentage;
+            ->sum(function (object $taxAmount) {
+                return $taxAmount->tax_rate->percentage;
             });
     }
 
