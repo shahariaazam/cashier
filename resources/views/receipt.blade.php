@@ -136,17 +136,17 @@
                                     @php($inclusiveTaxPercentage = $item->inclusiveTaxPercentage())
                                     @php($exclusiveTaxPercentage = $item->exclusiveTaxPercentage())
 
-                                    @isset($inclusiveTaxPercentage)
+                                    @if ($inclusiveTaxPercentage)
                                         {{ $inclusiveTaxPercentage }}% incl.
-                                    @endisset
+                                    @endif
 
-                                    @isset($inclusiveTaxPercentage, $exclusiveTaxPercentage)
+                                    @if ($inclusiveTaxPercentage && $exclusiveTaxPercentage)
                                         +
                                     @endif
 
-                                    @isset($exclusiveTaxPercentage)
+                                    @if ($exclusiveTaxPercentage)
                                         {{ $exclusiveTaxPercentage }}%
-                                    @endisset
+                                    @endif
                                 </td>
                             @endif
 
@@ -168,17 +168,17 @@
                                     @php($inclusiveTaxPercentage = $subscription->inclusiveTaxPercentage())
                                     @php($exclusiveTaxPercentage = $subscription->exclusiveTaxPercentage())
 
-                                    @isset($inclusiveTaxPercentage)
+                                    @if ($inclusiveTaxPercentage)
                                         {{ $inclusiveTaxPercentage }}% incl.
-                                    @endisset
+                                    @endif
 
-                                    @isset($inclusiveTaxPercentage, $exclusiveTaxPercentage)
+                                    @if ($inclusiveTaxPercentage && $exclusiveTaxPercentage)
                                         +
                                     @endif
 
-                                    @isset($exclusiveTaxPercentage)
+                                    @if ($exclusiveTaxPercentage)
                                         {{ $exclusiveTaxPercentage }}%
-                                    @endisset
+                                    @endif
                                 </td>
                             @endif
 
@@ -205,7 +205,7 @@
                                 @endif
                             </td>
 
-                            <td>-{{ $invoice->discount() }}</td>
+                            <td>{{ $invoice->discount() }}</td>
                         </tr>
                     @endif
 

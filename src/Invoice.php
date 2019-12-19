@@ -151,7 +151,7 @@ class Invoice
      */
     public function discount()
     {
-        return $this->formatAmount($this->invoice->subtotal + $this->invoice->tax - $this->invoice->total);
+        return $this->formatAmount($this->invoice->total - $this->invoice->subtotal + $this->rawExclusiveTax());
     }
 
     /**
@@ -205,7 +205,7 @@ class Invoice
     }
 
     /**
-     * Get the tax total amount.
+     * Get the total tax amount.
      *
      * @return string
      */
@@ -225,6 +225,22 @@ class Invoice
     }
 
     /**
+     * Get the raw exclusive tax amount.
+     *
+     * @return int
+     */
+    public function rawExclusiveTax()
+    {
+        return (int) collect($this->taxes())
+            ->filter(function (Tax $tax) {
+                return ! $tax->isInclusive();
+            })
+            ->sum(function (Tax $tax) {
+                return $tax->rawAmount();
+            });
+    }
+
+    /**
      * Get the taxes applied to the invoice.
      *
      * @return \Laravel\Cashier\Tax[]
@@ -235,14 +251,14 @@ class Invoice
             return $this->taxes;
         }
 
-        $totalTaxAmounts = StripeInvoice::retrieve(
-            ['id' => $this->id, 'expand' => 'total_tax_amounts.tax_rate'],
-            $this->owner->stripeOptions()
-        )->total_tax_amounts;
+        $this->refreshWithExpandedTaxRates();
 
-        return $this->taxes = collect($totalTaxAmounts)->map(function (array $taxAmount) {
-            return new Tax($taxAmount['amount'], $this->invoice->currency, $taxAmount['tax_rate']);
-        })->all();
+        return $this->taxes = collect($this->invoice->total_tax_amounts)
+            ->sortByDesc('inclusive')
+            ->map(function (object $taxAmount) {
+                return new Tax($taxAmount->amount, $this->invoice->currency, $taxAmount->tax_rate);
+            })
+            ->all();
     }
 
     /**
@@ -294,14 +310,9 @@ class Invoice
     public function invoiceLineItemsByType($type)
     {
         if (is_null($this->items)) {
-            // In order to make use of the tax rates on the different line items,
-            // we'll need to re-retrieve the invoice with the expanded tax rates.
-            $invoice = StripeInvoice::retrieve([
-                'id' => $this->invoice->id,
-                'expand' => ['lines.data.tax_amounts.tax_rate'],
-            ], $this->owner->stripeOptions());
+            $this->refreshWithExpandedTaxRates();
 
-            $this->items = new Collection($invoice->lines->autoPagingIterator());
+            $this->items = new Collection($this->invoice->lines->autoPagingIterator());
         }
 
         return $this->items->filter(function (StripeInvoiceLineItem $item) use ($type) {
@@ -309,6 +320,34 @@ class Invoice
         })->map(function (StripeInvoiceLineItem $item) {
             return new InvoiceLineItem($this->owner, $item);
         })->all();
+    }
+
+    /**
+     * Refreshes the invoice with expanded TaxRate objects.
+     *
+     * @return void
+     */
+    protected function refreshWithExpandedTaxRates()
+    {
+        if ($this->invoice->id) {
+            $this->invoice = StripeInvoice::retrieve([
+                'id' => $this->invoice->id,
+                'expand' => [
+                    'lines.data.tax_amounts.tax_rate',
+                    'total_tax_amounts.tax_rate',
+                ],
+            ], $this->owner->stripeOptions());
+        } else {
+            // If no invoice id is set then we can assume the
+            // invoice is the customer's upcoming invoice.
+            $this->invoice = StripeInvoice::upcoming([
+                'customer' => $this->owner->stripe_id,
+                'expand' => [
+                    'lines.data.tax_amounts.tax_rate',
+                    'total_tax_amounts.tax_rate',
+                ],
+            ], $this->owner->stripeOptions());
+        }
     }
 
     /**
